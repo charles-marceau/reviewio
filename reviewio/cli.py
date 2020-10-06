@@ -64,6 +64,14 @@ def time_condition(pull_request, condition):
 
     return pull_request.created_at > datetime.now() - delta
 
+def get_comment_author_name(comment):
+    return comment.user.login
+
+def print_comment_counts_per_user(comment_counts_per_user):
+    print("\nComment count per user:")
+    for (name, comment_count) in comment_counts_per_user:
+        print(f"{name}:".ljust(20, ' ') + str(comment_count))
+
 
 @click.group()
 @click.option('--token', envvar='GITHUB_TOKEN')
@@ -142,6 +150,31 @@ def repos():
             print_list_item(repo.full_name)
     except requests.exceptions.ConnectionError:
         raise click.ClickException('Check your internet connection!')
+
+
+@cli.command()
+@click.argument('name')
+@click.option('--state', '-s', default='open',
+              type=click.Choice(['open', 'closed', 'all']),
+              help='Select which category of pull requests you want to retrieve comments from.')
+def comments(name, state):
+    """Display number of comments per user."""
+    g = Github(cli.token)
+    try:
+        pull_requests = g.get_repo(name).get_pulls(state=state)
+        with click.progressbar(pull_requests, length=pull_requests.totalCount,
+                        show_eta=False, label='Processing Pull Requests') as pull_requests_bar:
+            user_names = []
+            for pull_request in pull_requests_bar:
+                comments = pull_request.get_comments()
+                user_names += (list(map(get_comment_author_name, comments)))
+
+        comment_count_per_user = Counter(user_names).most_common()
+        print_comment_counts_per_user(comment_count_per_user)
+    except requests.exceptions.ConnectionError:
+        raise click.ClickException('Check your internet connection!')
+    except UnknownObjectException:
+        raise click.ClickException('Repository not found!')
 
 
 if __name__ == '__main__':

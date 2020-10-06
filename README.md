@@ -105,3 +105,9 @@ $ reviewio repos
 ```
 $ reviewio labels django/django
 ```
+
+* To get the number of comments per user for a given repository
+
+```
+$ reviewio comments [--state open|closed|all] django/django
+```
