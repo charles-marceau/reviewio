@@ -67,9 +67,9 @@ def time_condition(pull_request, condition):
 def get_comment_author_name(comment):
     return comment.user.login
 
-def print_comment_counts_per_user(comment_counts_per_user):
+def print_users_with_comment_count(users_with_comment_count):
     print("\nComment count per user:")
-    for (name, comment_count) in comment_counts_per_user:
+    for (name, comment_count) in users_with_comment_count:
         print(f"{name}:".ljust(20, ' ') + str(comment_count))
 
 
@@ -158,7 +158,7 @@ def repos():
               type=click.Choice(['open', 'closed', 'all']),
               help='Select which category of pull requests you want to retrieve comments from.')
 def comments(name, state):
-    """Display number of comments per user."""
+    """Display number of review comments per user for a given repository."""
     g = Github(cli.token)
     try:
         pull_requests = g.get_repo(name).get_pulls(state=state)
@@ -169,8 +169,8 @@ def comments(name, state):
                 comments = pull_request.get_comments()
                 user_names += (list(map(get_comment_author_name, comments)))
 
-        comment_count_per_user = Counter(user_names).most_common()
-        print_comment_counts_per_user(comment_count_per_user)
+        sorted_comment_count = Counter(user_names).most_common()
+        print_users_with_comment_count(sorted_comment_count)
     except requests.exceptions.ConnectionError:
         raise click.ClickException('Check your internet connection!')
     except UnknownObjectException:
